@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use levels_core::config::{ConfigLoader, LevelsConfig, MAX_RADIUS};
+use levels_core::config::{ConfigLoader, LevelsConfig, MAX_COLUMN_SURFACES, MAX_RADIUS};
 use tempfile::TempDir;
 
 fn write_config(text: &str) -> (TempDir, std::path::PathBuf) {
@@ -15,6 +15,8 @@ fn missing_file_gives_defaults() {
     let config = ConfigLoader::load(Path::new("definitely/not/here/config.json"));
 
     assert_eq!(config.keys.toggle, 0x4C);
+    assert!(config.keys.ctrl);
+    assert_eq!(config.memory_budget_mb, 32);
     assert_eq!(config.scan.radius, 24);
     assert_eq!(config.scan.pass_seconds, 0.25);
     assert_eq!(config.scan.max_labels, 8192);
@@ -41,6 +43,19 @@ fn partial_json_keeps_other_defaults() {
 }
 
 #[test]
+fn huge_scan_limits_are_capped() {
+    let mut huge = LevelsConfig::default();
+    huge.scan.max_labels = u32::MAX;
+    huge.scan.max_columns_per_frame = u32::MAX;
+
+    let capped = huge.sanitized();
+
+    let side = 2 * MAX_RADIUS + 1;
+    assert_eq!(capped.scan.max_labels, side * side * MAX_COLUMN_SURFACES as u32);
+    assert_eq!(capped.scan.max_columns_per_frame, side * side);
+}
+
+#[test]
 fn sanitized_fixes_bad_ranges() {
     let mut low = LevelsConfig::default();
     low.scan.radius = 0;
@@ -51,6 +66,8 @@ fn sanitized_fixes_bad_ranges() {
     low.light.yellow_max = 3;
     low.label.red = [2.0, -1.0, 0.5, 1.0];
     low.label.scale = 0.0;
+    low.label.lift = 0.06;
+    low.memory_budget_mb = 0;
     let low = low.sanitized();
 
     assert_eq!(low.scan.radius, 1);
@@ -61,6 +78,8 @@ fn sanitized_fixes_bad_ranges() {
     assert_eq!(low.light.yellow_max, 5);
     assert_eq!(low.label.red, [1.0, 0.0, 0.5, 1.0]);
     assert_eq!(low.label.scale, LevelsConfig::default().label.scale);
+    assert_eq!(low.label.lift, LevelsConfig::default().label.lift);
+    assert_eq!(low.memory_budget_mb, 1);
 
     let mut high = LevelsConfig::default();
     high.scan.radius = 100;

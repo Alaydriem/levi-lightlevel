@@ -10,4 +10,4 @@ pub use label::LabelConfig;
 pub use levels::LevelsConfig;
 pub use light::LightConfig;
 pub use loader::ConfigLoader;
-pub use scan::{MAX_COLUMN_SURFACES, MAX_RADIUS, ScanConfig};
+pub use scan::{GAME_TAG_HEADROOM, MAX_COLUMN_SURFACES, MAX_RADIUS, ScanConfig};

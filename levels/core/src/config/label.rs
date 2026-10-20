@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 
 const DEFAULT_SCALE: f32 = 1.0;
 const DEFAULT_LIFT: f32 = 0.02;
-const MAX_LIFT: f32 = 0.5;
+// below the top of a carpet (1/16 block), so carpets and snow layers over a block hide its label
+const MAX_LIFT: f32 = 0.05;
 
 // colors are RGBA in 0..=1; lift raises the text above the top face so it does not z-fight
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
