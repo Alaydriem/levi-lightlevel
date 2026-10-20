@@ -72,6 +72,10 @@ jobs:
           restore-keys: |
             xmake-
 
+      # build-mod runs build-ffi and header at the same time; on a fresh runner both would install the
+      # toolchain from rust-toolchain.toml at once, and the two rustup downloads race
+      - run: rustup toolchain install --no-self-update
+
       - run: mise run build-mod
 
       - uses: actions/upload-artifact@v7
