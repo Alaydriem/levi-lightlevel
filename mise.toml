@@ -1,0 +1,53 @@
+[tasks.preflight]
+description = "Names a missing Rust toolchain or cargo-nextest before a build turns it into an obscure error"
+dir = "{{config_root}}"
+run = ["rustc --version", "cargo --version", "cargo nextest --version"]
+
+[tasks.check]
+description = "cargo check, clippy with warnings denied, and rustfmt check over the workspace"
+dir = "{{config_root}}"
+run = [
+  "cargo check --workspace --all-targets",
+  "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo fmt --all --check",
+]
+
+[tasks.test]
+description = "Every workspace test through cargo-nextest"
+dir = "{{config_root}}"
+run = "cargo nextest run --workspace"
+
+[tasks.header]
+description = "Regenerates shim/include/levi_levels.h from the levels-ffi crate"
+dir = "{{config_root}}"
+run = "cbindgen --config levels/ffi/cbindgen.toml --crate levels-ffi --output shim/include/levi_levels.h levels/ffi"
+
+[tasks.header-check]
+description = "Fails when shim/include/levi_levels.h is out of date with the levels-ffi crate"
+dir = "{{config_root}}"
+run = "cbindgen --verify --config levels/ffi/cbindgen.toml --crate levels-ffi --output shim/include/levi_levels.h levels/ffi"
+
+[tasks.build-ffi]
+description = "Builds the levels_ffi static library in release mode"
+dir = "{{config_root}}"
+run = "cargo build --release -p levels-ffi"
+
+[tasks.build-mod]
+description = "Builds the LeviLamina mod into shim/bin/alaydriem-levels"
+depends = ["build-ffi", "header"]
+dir = "{{config_root}}/shim"
+# -r: levibuildscript 0.6.2 deletes its prelink library after each link but skips the prelink when only
+# levels_ffi.lib changed, so an incremental relink fails with LNK1181 bedrock_runtime_api.lib
+run = ["xmake f -p windows -a x64 -m release -y", "xmake -r -y"]
+
+[tasks.install-mod]
+description = "Copies the built mod into the game mods folder named by LM_MODS_DIR (set it in mise.local.toml)"
+depends = ["build-mod"]
+dir = "{{config_root}}"
+shell = "bash -c"
+# LeviLamina finds a mod's folder from the manifest name, so the folder carries that name
+run = 'mkdir -p "${LM_MODS_DIR:?set LM_MODS_DIR in mise.local.toml}/alaydriem-levels" && cp -r shim/bin/alaydriem-levels/. "$LM_MODS_DIR/alaydriem-levels/"'
+
+[tools]
+"cargo:cbindgen" = "0.29.2"
+"github:xmake-io/xmake" = "3.1.1"
