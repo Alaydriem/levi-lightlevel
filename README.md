@@ -91,7 +91,6 @@ Every build and test is a [mise](https://mise.jdx.dev) task. `mise tasks` lists 
 ```bash
 mise trust
 mise run preflight
-# the mod manager crates are path dependencies: clone github.com/alaydriem/levi-crates next to this repo
 mise run build-mod     # builds the Rust library, the header and the mod into shim/bin/alaydriem-levels
 mise run install-mod   # copies it to LM_MODS_DIR, set in mise.local.toml
 ```

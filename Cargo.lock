@@ -14,6 +14,7 @@ dependencies = [
 [[package]]
 name = "amm-abi"
 version = "0.1.0"
+source = "git+https://github.com/alaydriem/levi-crates?branch=master#67ec02ce9f2f851d01d81b068cfd9be690b5a973"
 dependencies = [
  "amm-core",
  "bytemuck",
@@ -22,6 +23,7 @@ dependencies = [
 [[package]]
 name = "amm-client"
 version = "0.1.0"
+source = "git+https://github.com/alaydriem/levi-crates?branch=master#67ec02ce9f2f851d01d81b068cfd9be690b5a973"
 dependencies = [
  "amm-abi",
  "amm-core",
@@ -36,6 +38,7 @@ dependencies = [
 [[package]]
 name = "amm-core"
 version = "0.1.0"
+source = "git+https://github.com/alaydriem/levi-crates?branch=master#67ec02ce9f2f851d01d81b068cfd9be690b5a973"
 dependencies = [
  "arc-swap",
  "bytemuck",

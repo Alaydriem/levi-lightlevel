@@ -34,9 +34,23 @@ target("alaydriem-levels")
     set_kind("shared")
     set_languages("c++20")
     set_symbols("debug")
-    add_headerfiles("src/**.h", "include/levi_levels.h", "../../levi-crates/include/alaydriem_mod_manager.h")
+    add_headerfiles("src/**.h", "include/levi_levels.h")
     add_files("src/**.cpp")
-    add_includedirs("src", "include", "../../levi-crates/include")
+    add_includedirs("src", "include")
+    -- alaydriem_mod_manager.h comes from the levi-crates checkout that cargo resolved for amm-abi
+    on_load(function (target)
+        import("core.base.json")
+        local manifest = path.join(os.projectdir(), "..", "Cargo.toml")
+        local metadata = json.decode(os.iorunv("cargo", {"metadata", "--format-version", "1", "--manifest-path", manifest}))
+        local crate
+        for _, package in ipairs(metadata.packages) do
+            if package.name == "amm-abi" then
+                crate = path.directory(package.manifest_path)
+            end
+        end
+        assert(crate, "cargo metadata names no amm-abi package")
+        target:add("includedirs", path.join(crate, "..", "..", "include"))
+    end)
     add_defines("LL_PLAT_C")
     add_linkdirs("$(projectdir)/../target/release")
     add_links("levels_ffi")

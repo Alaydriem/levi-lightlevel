@@ -16,10 +16,9 @@ curia = "=0.2.2"
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
 hcl-rs = "=0.19.8"
 levels-core = { path = "levels/core" }
-# mod manager crates; moves to a git dependency on a levi-crates tag before publishing
-amm-abi = { path = "../levi-crates/crates/amm-abi" }
-amm-client = { path = "../levi-crates/crates/amm-client", default-features = false }
-amm-core = { path = "../levi-crates/crates/amm-core" }
+amm-abi = { git = "https://github.com/alaydriem/levi-crates", branch = "master" }
+amm-client = { git = "https://github.com/alaydriem/levi-crates", branch = "master", default-features = false }
+amm-core = { git = "https://github.com/alaydriem/levi-crates", branch = "master" }
 
 [workspace.lints.clippy]
 unwrap_used = "deny"
