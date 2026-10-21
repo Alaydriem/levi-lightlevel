@@ -5,4 +5,3 @@ mod label_rotation;
 mod light_classifier;
 mod scan_planner;
 mod telemetry;
-mod toggle_key;

@@ -1,12 +1,12 @@
 #include "draw/LabelDrawer.h"
 
+#include "bridge/ModLog.h"
 #include "bridge/RustBridge.h"
 #include "draw/CameraReader.h"
 #include "draw/LabelRing.h"
 #include "draw/LabelRotation.h"
 #include "draw/LabelText.h"
 #include "draw/NameTagList.h"
-#include "mod/LevelsMod.h"
 #include "scan/FrameStatusReader.h"
 #include "scan/ScanDriver.h"
 
@@ -55,9 +55,7 @@ std::optional<NameTagList> openList(NameTagRenderObjectCollection& tags) {
     auto list = NameTagList::open(tags);
     if (list) return list;
     g_layoutBroken = true;
-    LevelsMod::getInstance().getSelf().getLogger().error(
-        "levi-levels stops drawing: the name-tag list layout is not the one this build expects"
-    );
+    ModLog::error("levi-levels stops drawing: the name-tag list layout is not the one this build expects");
     return std::nullopt;
 }
 

@@ -83,8 +83,6 @@ typedef struct LvStr {
   uintptr_t len;
 } LvStr;
 
-typedef void (*LvLogFn)(uint8_t level, const uint8_t *message, uintptr_t len);
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -131,27 +129,32 @@ enum LvStatus lv_frame(const struct LvHandle *handle,
                        struct LvScanView *out);
 
 /**
- * Passes one key event. `code` is a Windows virtual-key code, `down` is 1 for a press or repeat and 0 for a
- * release, and `ctrl` is 1 when Ctrl is held at the event. On Ok, `consume` is 1 when the game must not
- * see the key.
+ * Registers the overlay with the mod manager and starts its core from the manager's config.hcl. `config_dir`
+ * is the mod's own LeviLamina config folder as an absolute UTF-8 path. Returns null when the path is null or
+ * not UTF-8, when the mod manager is not loaded, or when it refuses the mod. Call it from the mod's enable,
+ * never under the OS loader lock: the manager starts a log writer thread for each registration.
  */
-enum LvStatus lv_key(const struct LvHandle *handle,
-                     uint32_t code,
-                     uint8_t down,
-                     uint8_t ctrl,
-                     uint8_t *consume);
+struct LvHandle *lv_create(const struct LvStr *config_dir);
 
 /**
- * Starts the overlay core from the UTF-8 path of config.json and installs `log` as the log sink. Returns
- * null when the path is null or not UTF-8; a missing or broken config file gives the defaults.
- */
-struct LvHandle *lv_create(const struct LvStr *config_file,
-                           LvLogFn log);
-
-/**
- * Frees the handle. The handle and every view it returned must not be used again. Null is ignored.
+ * Unregisters from the mod manager and frees the handle. The handle and every view it returned must not be
+ * used again. Null is ignored.
  */
 void lv_destroy(struct LvHandle *handle);
+
+/**
+ * Sends one shim log line to the mod manager's log. `level` is an `AmmLogLevel` value and `fields_json` a JSON
+ * object; each text is UTF-8 and lives for the call. Nothing is sent before lv_create succeeds or after
+ * lv_destroy.
+ */
+void lv_log(uint8_t level,
+            const uint8_t *message,
+            uintptr_t message_len,
+            const uint8_t *fields_json,
+            uintptr_t fields_len,
+            const uint8_t *file,
+            uintptr_t file_len,
+            uint32_t line);
 
 #ifdef __cplusplus
 }  // extern "C"

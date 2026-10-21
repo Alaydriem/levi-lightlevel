@@ -4,6 +4,9 @@ A client-side light-level overlay for the Minecraft Bedrock Windows client, load
 [LeviLamina](https://github.com/LiteLDev/LeviLamina). Use it to find the spots where hostile mobs can
 spawn, and light them.
 
+The mod needs [Alaydriem's Mod Manager](https://github.com/alaydriem/levi-crates) (`alaydriem-mod-manager`
+0.1.x). Without it the overlay stays off and the LeviLamina console shows one error line.
+
 Press **Ctrl+L** to show or hide the overlay. Each block near you that a mob can stand on shows its light
 level as a colored number. The number lies flat on the top face of the block. The game draws it in the
 world, so blocks in front of it hide it.
@@ -26,7 +29,9 @@ a flower, a torch).
 ## Behaviour
 
 - The overlay starts off in each world. Leave the world and it turns off.
-- The key does nothing while a screen is open (chat, a sign, a book, the pause menu). L without Ctrl always reaches the game.
+- The key does nothing while a screen is open (chat, a sign, a book, the pause menu).
+- Change the key on the mod manager's Keybinds page. The manager shows a clash with another mod's key in
+  Conflicts.
 - Carpets and snow layers hide the number of the block under them.
 - The numbers follow you and change after you place or break a light, within a quarter of a second.
 - Change dimension and the overlay stays on and scans again.
@@ -43,37 +48,41 @@ server you play on.
 
 ## Configuration
 
-The mod reads `config.json` from its LeviLamina config folder when the game starts. A missing or broken
-file gives the defaults and a warning in the log. A value out of range is clamped into its range, or, for
-`passSeconds`, `lift` and `scale`, replaced by its default.
+Edit the settings in the mod manager panel. A change saves on its own. Colors, light bands, lift, scale
+and telemetry apply at once; the scan values and the memory budget apply at the next game start.
+
+The manager keeps the settings in `config.hcl` in the mod's LeviLamina config folder, and keeps comments
+and hand edits in it. A value out of range is clamped into its range. The old `config.json` is not read.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `keys.toggle` | `76` (`L`) | Windows virtual-key code of the toggle key |
-| `keys.ctrl` | `true` | Ctrl must be held with the toggle key |
+| `keys.toggle` | `"Ctrl+L"` | The toggle key chord |
 | `scan.radius` | `24` | Radius in blocks, 1 to 32 |
-| `scan.passSeconds` | `0.25` | Time for one full scan of the radius |
-| `scan.maxLabels` | `8192` | Most numbers drawn; the nearest are kept |
-| `scan.maxColumnsPerFrame` | `512` | Most block columns read in one frame |
-| `light.redMax` | `0` | Light at or below this is red |
-| `light.yellowMax` | `7` | Light at or below this (and above red) is yellow |
+| `scan.pass_seconds` | `0.25` | Time for one full scan of the radius |
+| `scan.max_labels` | `8192` | Most numbers drawn; the nearest are kept |
+| `scan.max_columns_per_frame` | `512` | Most block columns read in one frame |
+| `light.red_max` | `0` | Light at or below this is red |
+| `light.yellow_max` | `7` | Light at or below this (and above red) is yellow |
 | `label.red`, `label.yellow`, `label.green` | see below | RGBA colors, each 0 to 1 |
 | `label.lift` | `0.02` | Height of the number above the top face, 0 to 0.05 |
 | `label.scale` | `1.0` | Size of the number |
 | `telemetry` | `false` | Writes frame rate, cost and memory to the log every 2 seconds |
-| `memoryBudgetMb` | `32` | Memory the overlay may use; telemetry warns above it |
+| `memory_budget_mb` | `32` | Memory the overlay may use; telemetry warns above it |
 
 Default colors: red `[1.0, 0.25, 0.25, 1.0]`, yellow `[1.0, 0.85, 0.2, 1.0]`, green
 `[0.35, 1.0, 0.35, 1.0]`.
 
-```json
-{
-  "keys": { "toggle": 76, "ctrl": true },
-  "scan": { "radius": 16 },
-  "light": { "redMax": 0, "yellowMax": 7 },
-  "telemetry": true
+```hcl
+keys {
+  toggle = "Ctrl+L"
 }
+scan {
+  radius = 16
+}
+telemetry = true
 ```
+
+The log is in `<game>/logs/amm/alaydriem-levels/`, one file per game session.
 
 ## Build
 
@@ -82,6 +91,7 @@ Every build and test is a [mise](https://mise.jdx.dev) task. `mise tasks` lists 
 ```bash
 mise trust
 mise run preflight
+# the mod manager crates are path dependencies: clone github.com/alaydriem/levi-crates next to this repo
 mise run build-mod     # builds the Rust library, the header and the mod into shim/bin/alaydriem-levels
 mise run install-mod   # copies it to LM_MODS_DIR, set in mise.local.toml
 ```

@@ -7,13 +7,9 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
-log.workspace = true
+curia.workspace = true
 serde.workspace = true
-serde_json.workspace = true
-thiserror.workspace = true
 
-[dev-dependencies]
-tempfile.workspace = true
 
 [[test]]
 name = "integration"

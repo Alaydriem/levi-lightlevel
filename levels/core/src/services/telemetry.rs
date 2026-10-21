@@ -43,6 +43,13 @@ impl Telemetry {
         }
     }
 
+    // a change starts a fresh window, so a report never spans the time telemetry was off
+    pub fn set_enabled(&mut self, enabled: bool) {
+        if enabled != self.enabled {
+            *self = Self { memory_bytes: self.memory_bytes, ..Self::new(enabled, self.budget_bytes) };
+        }
+    }
+
     pub fn frame(&mut self, time_seconds: f64, columns: usize) {
         if !self.enabled {
             return;

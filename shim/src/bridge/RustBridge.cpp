@@ -1,9 +1,6 @@
 #include "bridge/RustBridge.h"
 
-#include "mod/LevelsMod.h"
-
 #include <atomic>
-#include <string_view>
 
 namespace levi_levels {
 
@@ -11,31 +8,12 @@ namespace {
 
 std::atomic<LvHandle*> g_handle{nullptr};
 
-void logFromRust(uint8_t level, const uint8_t* message, uintptr_t len) {
-    std::string_view text(reinterpret_cast<const char*>(message), len);
-    auto&            logger = LevelsMod::getInstance().getSelf().getLogger();
-    switch (level) {
-    case 1:
-        logger.error("{}", text);
-        break;
-    case 2:
-        logger.warn("{}", text);
-        break;
-    case 3:
-        logger.info("{}", text);
-        break;
-    default:
-        logger.debug("{}", text);
-        break;
-    }
-}
-
 } // namespace
 
-bool RustBridge::create(const std::filesystem::path& configFile) {
-    std::string config = utf8(configFile);
-    LvStr       path{reinterpret_cast<const uint8_t*>(config.data()), config.size()};
-    LvHandle*   handle = lv_create(&path, &logFromRust);
+bool RustBridge::create(const std::filesystem::path& configDir) {
+    std::string dir = utf8(configDir);
+    LvStr       text{reinterpret_cast<const uint8_t*>(dir.data()), dir.size()};
+    LvHandle*   handle = lv_create(&text);
     g_handle.store(handle, std::memory_order_release);
     return handle != nullptr;
 }

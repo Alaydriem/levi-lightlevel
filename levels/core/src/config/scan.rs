@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 pub const MAX_RADIUS: u32 = 32;
 // a column of 2r + 1 blocks holds at most r + 1 surfaces
@@ -15,8 +15,8 @@ const MAX_LABELS: u32 = MAX_COLUMNS_PER_FRAME * MAX_COLUMN_SURFACES as u32;
 const DEFAULT_PASS_SECONDS: f32 = 0.25;
 const MAX_PASS_SECONDS: f32 = 5.0;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(default)]
 pub struct ScanConfig {
     pub radius: u32,
     // time for one full pass over every column in the radius

@@ -1,7 +1,6 @@
 use levels_core::structs::frame::FrameStatus;
 use levels_core::structs::world::BlockPos;
 
-pub const TOGGLE: u32 = 0x4C;
 pub const FRAME: f64 = 1.0 / 60.0;
 
 pub fn feet() -> BlockPos {

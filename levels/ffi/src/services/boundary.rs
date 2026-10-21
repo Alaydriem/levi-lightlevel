@@ -17,7 +17,7 @@ impl LvBoundary {
                     .map(|s| (*s).to_string())
                     .or_else(|| payload.downcast_ref::<String>().cloned())
                     .unwrap_or_else(|| "unknown panic".to_string());
-                log::error!("panic stopped at the C boundary: {message}");
+                curia::error!("panic stopped at the C boundary", { payload: message });
                 LvStatus::Panicked
             }
         }
@@ -28,7 +28,7 @@ impl LvBoundary {
         match catch_unwind(AssertUnwindSafe(body)) {
             Ok(value) => value,
             Err(_) => {
-                log::error!("panic stopped at the C boundary");
+                curia::error!("panic stopped at the C boundary");
                 fallback
             }
         }

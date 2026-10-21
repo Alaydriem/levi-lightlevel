@@ -1,11 +1,9 @@
-use log::{info, warn};
-
 use crate::config::{GAME_TAG_HEADROOM, LevelsConfig};
-use crate::services::{DrawListBuilder, LabelGrid, LabelRotation, LightClassifier, ScanPlanner, Telemetry, ToggleKey};
+use crate::services::{DrawListBuilder, LabelGrid, LabelRotation, LightClassifier, ScanPlanner, Telemetry};
 use crate::structs::draw::{CameraView, Label};
 use crate::structs::frame::{ColumnRequest, FrameStatus};
-use crate::structs::input::KeyPress;
 use crate::structs::light::SurfaceSample;
+use crate::structs::manager::ManagerSignal;
 use crate::structs::telemetry::TelemetryReport;
 use crate::structs::world::ColumnPos;
 
@@ -15,7 +13,6 @@ const BYTES_PER_MB: u64 = 1024 * 1024;
 
 // the on/off state, the world lifecycle and the per-frame flow from scan requests to the draw list
 pub struct LevelsController {
-    toggle: ToggleKey,
     max_columns_per_frame: usize,
     is_on: bool,
     last_status: Option<FrameStatus>,
@@ -39,7 +36,6 @@ impl LevelsController {
         let mut telemetry = Telemetry::new(config.telemetry, config.memory_budget_mb as u64 * BYTES_PER_MB);
         telemetry.memory(core_bytes);
         Self {
-            toggle: ToggleKey::new(&config.keys),
             max_columns_per_frame: config.scan.max_columns_per_frame as usize,
             is_on: false,
             last_status: None,
@@ -53,30 +49,27 @@ impl LevelsController {
         }
     }
 
-    // ctrl is whether Ctrl is down at the event; returns true when the game must not see the key
-    pub fn key(&mut self, code: u32, down: bool, ctrl: bool) -> bool {
-        let in_world = self.last_status.is_some_and(|status| status.in_world);
-        let allowed = in_world && self.last_status.is_some_and(|status| !status.menu_open);
-        match self.toggle.press(code, down, ctrl, allowed) {
-            KeyPress::Toggle => {
-                self.set_on(!self.is_on);
-                true
-            }
-            KeyPress::Swallow => true,
-            KeyPress::Blocked => {
-                if !in_world {
-                    info!("toggle ignored: no world loaded");
+    pub fn signal(&mut self, signal: ManagerSignal) {
+        match signal {
+            ManagerSignal::TogglePressed => self.toggle(),
+            ManagerSignal::LeaseLost | ManagerSignal::Disabled => {
+                if self.is_on {
+                    curia::info!("overlay stopped by the mod manager", { reason: format!("{signal:?}") });
+                    self.set_on(false);
                 }
-                false
             }
-            KeyPress::Ignore => false,
         }
     }
 
+    // applies the settings that take effect at once; scan and memory budget size buffers in new() and keep
+    // their values until the next start
+    pub fn apply_config(&mut self, config: LevelsConfig) {
+        let config = config.sanitized();
+        self.builder.restyle(config.label, LightClassifier::new(config.light));
+        self.telemetry.set_enabled(config.telemetry);
+    }
+
     pub fn frame(&mut self, status: FrameStatus) -> &[ColumnRequest] {
-        if status.menu_open || !status.in_world {
-            self.toggle.reset();
-        }
         let requests: &[ColumnRequest] = if status.in_world && !status.has_player {
             &[]
         } else {
@@ -115,7 +108,9 @@ impl LevelsController {
         };
         if game_tags > GAME_TAG_HEADROOM && !self.is_tag_limit_reported {
             self.is_tag_limit_reported = true;
-            warn!("{game_tags} game name tags on screen; fewer labels are drawn, the nearest are kept");
+            curia::warn!("many game name tags on screen, fewer labels are drawn, the nearest are kept", {
+                game_tags: game_tags
+            });
         }
         if camera.is_none() {
             self.telemetry.camera_missing();
@@ -161,22 +156,34 @@ impl LevelsController {
         };
         if !status.in_world {
             if self.is_on {
-                info!("left the world; overlay off");
+                curia::info!("left the world, overlay off");
                 self.set_on(false);
             }
             return;
         }
         if last.in_world && last.dimension != status.dimension {
-            info!("dimension changed to {}; rescanning", status.dimension);
+            curia::info!("dimension changed, rescanning", { dimension: status.dimension });
             self.drop_labels();
         }
+    }
+
+    fn toggle(&mut self) {
+        let in_world = self.last_status.is_some_and(|status| status.in_world);
+        if !in_world {
+            curia::info!("toggle ignored: no world loaded");
+            return;
+        }
+        if self.last_status.is_some_and(|status| status.menu_open) {
+            return;
+        }
+        self.set_on(!self.is_on);
     }
 
     fn set_on(&mut self, is_on: bool) {
         self.is_on = is_on;
         self.is_tag_limit_reported = false;
         self.drop_labels();
-        info!("overlay {}", if is_on { "on" } else { "off" });
+        curia::info!("overlay toggled", { on: is_on });
     }
 
     fn drop_labels(&mut self) {
@@ -187,21 +194,20 @@ impl LevelsController {
     fn log_report(report: &TelemetryReport) {
         let memory_mb = report.memory_bytes as f64 / BYTES_PER_MB as f64;
         let budget_mb = report.budget_bytes as f64 / BYTES_PER_MB as f64;
-        info!(
-            "telemetry: fps {:.1}, max frame {:.2} ms, labels {}, culled {}, draws without camera {}, columns/frame {:.1}, sample {:.0} us, draw {:.0} us, memory {:.1} of {:.0} MB",
-            report.fps,
-            report.max_frame_ms,
-            report.labels,
-            report.culled,
-            report.draws_without_camera,
-            report.columns_per_frame,
-            report.sample_us_avg,
-            report.draw_us_avg,
-            memory_mb,
-            budget_mb
-        );
+        curia::info!("telemetry", {
+            fps: report.fps,
+            max_frame_ms: report.max_frame_ms,
+            labels: report.labels,
+            culled: report.culled,
+            draws_without_camera: report.draws_without_camera,
+            columns_per_frame: report.columns_per_frame,
+            sample_us: report.sample_us_avg,
+            draw_us: report.draw_us_avg,
+            memory_mb: memory_mb,
+            budget_mb: budget_mb,
+        });
         if report.is_over_budget() {
-            warn!("memory {memory_mb:.1} MB is over the {budget_mb:.0} MB budget");
+            curia::warn!("memory over budget", { memory_mb: memory_mb, budget_mb: budget_mb });
         }
     }
 }

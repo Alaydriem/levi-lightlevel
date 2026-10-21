@@ -1,27 +1,30 @@
+use std::path::Path;
+
+use amm_client::test_support::FakeTable;
+use amm_core::structs::event::{KeybindPhase, ModEvent};
 use levels_ffi::api::draw::{lv_draw_list, lv_submit_column};
 use levels_ffi::api::frame::lv_frame;
-use levels_ffi::api::input::lv_key;
-use levels_ffi::api::lifecycle::{lv_create, lv_destroy};
+use levels_ffi::api::lifecycle::lv_destroy;
 use levels_ffi::services::LvHandle;
-use levels_ffi::types::{LvCamera, LvDrawView, LvFrameStatus, LvScanView, LvStatus, LvStr, LvSurfaceSample};
+use levels_ffi::types::{LvCamera, LvDrawView, LvFrameStatus, LvScanView, LvStatus, LvSurfaceSample};
 
-pub const TOGGLE: u32 = 0x4C;
-
-// a live handle created from a config path that does not exist, destroyed on drop
+// a live handle registered on this thread's fake manager, destroyed on drop
 pub struct LvSession {
     pub handle: *mut LvHandle,
 }
 
 impl LvSession {
+    pub const TOGGLE: ModEvent = ModEvent::Keybind { action: 0, phase: KeybindPhase::Pressed };
+
     pub fn new() -> Self {
-        let dir = tempfile::tempdir().unwrap();
-        Self::with_config(&dir.path().join("absent.json"))
+        Self::with_config("")
     }
 
-    pub fn with_config(file: &std::path::Path) -> Self {
-        let text = file.to_str().unwrap();
-        let path = LvStr { ptr: text.as_ptr(), len: text.len() };
-        Self { handle: lv_create(&path, None) }
+    // `config` is the config.hcl text the fake manager hands out
+    pub fn with_config(config: &str) -> Self {
+        FakeTable::set_config(config);
+        let handle = LvHandle::connect(FakeTable::table(), Path::new(FakeTable::CONFIG_DIR)).unwrap();
+        Self { handle: Box::into_raw(Box::new(handle)) }
     }
 
     // in world, no menu, overworld, feet at (10, 64, -20)
@@ -41,20 +44,22 @@ impl LvSession {
         }
     }
 
+    pub fn out_of_world(time_seconds: f64) -> LvFrameStatus {
+        LvFrameStatus { in_world: 0, has_player: 0, ..Self::in_world(time_seconds) }
+    }
+
     pub fn frame(&self, status: &LvFrameStatus) -> (LvStatus, LvScanView) {
         let mut out = LvScanView::default();
         let code = lv_frame(self.handle, status, &mut out);
         (code, out)
     }
 
-    // an in-world frame, then one toggle press and release; returns the consume flag of the press
-    pub fn turn_on(&self) -> u8 {
+    // an in-world frame, then the toggle keybind delivered on a frame without a player, so the toggle lands
+    // and the scan planner is untouched until the next frame
+    pub fn turn_on(&self) {
         self.frame(&Self::in_world(0.0));
-        let mut consume = 0u8;
-        assert_eq!(lv_key(self.handle, TOGGLE, 1, 1, &mut consume), LvStatus::Ok);
-        let mut released = 0u8;
-        assert_eq!(lv_key(self.handle, TOGGLE, 0, 1, &mut released), LvStatus::Ok);
-        consume
+        FakeTable::push_event(Self::TOGGLE);
+        self.frame(&LvFrameStatus { has_player: 0, ..Self::in_world(0.0) });
     }
 
     pub fn submit(&self, x: i32, z: i32, samples: &[LvSurfaceSample]) -> LvStatus {
