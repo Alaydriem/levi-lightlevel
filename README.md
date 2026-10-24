@@ -32,7 +32,7 @@ The overlay hides with the HUD (<kbd>F1</kbd>) and starts off in each world.
 
 ## Installation
 
-Requires the client build of [LeviLamina](https://github.com/LiteLDev/LeviLamina) and [Alaydriem's Mod Manager](https://github.com/alaydriem/levi-crates).
+Requires the client build of [LeviLamina](https://github.com/LiteLDev/LeviLamina) and [Alaydriem's Mod Manager](https://github.com/alaydriem/levi-modmanager).
 
 ```powershell
 lip install github.com/alaydriem/levi-levels#client

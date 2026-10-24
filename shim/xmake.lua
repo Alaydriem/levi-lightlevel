@@ -37,7 +37,7 @@ target("alaydriem-levels")
     add_headerfiles("src/**.h", "include/levi_levels.h")
     add_files("src/**.cpp")
     add_includedirs("src", "include")
-    -- alaydriem_mod_manager.h comes from the levi-crates checkout that cargo resolved for amm-abi
+    -- alaydriem_mod_manager.h comes from the levi-modmanager checkout that cargo resolved for amm-abi
     on_load(function (target)
         import("core.base.json")
         local manifest = path.join(os.projectdir(), "..", "Cargo.toml")
