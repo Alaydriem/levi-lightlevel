@@ -1,91 +1,79 @@
+<div align="center">
+
 # Alaydriem's Light Levels
 
-A client-side light-level overlay for the Minecraft Bedrock Windows client, loaded by
-[LeviLamina](https://github.com/LiteLDev/LeviLamina). Use it to find the spots where hostile mobs can
-spawn, and light them.
+[![Release](https://img.shields.io/github/v/release/alaydriem/levi-lightlevel?include_prereleases)](https://github.com/alaydriem/levi-lightlevel/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/alaydriem/levi-lightlevel/build.yml?branch=master&label=build)](https://github.com/alaydriem/levi-lightlevel/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/alaydriem/levi-lightlevel)](./LICENSE)
+![Minecraft Bedrock](https://img.shields.io/badge/Minecraft_Bedrock-1.26.51-62B47A)
+[![LeviLamina](https://img.shields.io/badge/LeviLamina-26.51.6-4A90D9)](https://github.com/LiteLDev/LeviLamina)
 
-Press **Ctrl+L** to show or hide the overlay. Each block near you that a mob can stand on shows its light
-level as a colored number. The number lies flat on the top face of the block. The game draws it in the
-world, so blocks in front of it hide it.
+</div>
 
-## What the numbers mean
+A light-level overlay for Minecraft Bedrock. Shows the light level on every block near you where a mob can spawn, so you can find dark spots and light them.
 
-The number is the light in the space above the block at the current time of day: the brighter of the
-block light and the sky light, with the sky light made darker for the time of day. Open ground shows 15
-at noon and less at night.
+Client-side only. It reads light data your game already has and sends nothing to the server.
 
-| Color | Light |
+## Usage
+
+Press <kbd>Ctrl</kbd> + <kbd>L</kbd> to toggle the overlay. The key can be changed on the mod manager's Keybinds page.
+
+Each spawnable block shows a number on its top face:
+
+| Colour | Light |
 | --- | --- |
 | Red | 0 |
-| Yellow | 1 to 7 |
-| Green | 8 to 15 |
+| Yellow | 1–7 |
+| Green | 8–15 |
 
-A block gets a number when its top face is full and solid, and the block above it has no collision (air,
-a flower, a torch).
+The number is the light above the block at the current time of day, so open ground reads 15 at noon and lower at night. Numbers update within a quarter second when you place or break a light.
 
-## Behaviour
+The overlay hides with the HUD (<kbd>F1</kbd>) and starts off in each world.
 
-- The overlay starts off in each world. Leave the world and it turns off.
-- The key does nothing while a screen is open (chat, a sign, a book, the pause menu). L without Ctrl always reaches the game.
-- Carpets and snow layers hide the number of the block under them.
-- The numbers follow you and change after you place or break a light, within a quarter of a second.
-- Change dimension and the overlay stays on and scans again.
-- Hide the HUD (F1) and the numbers hide with it. The scan stops until the HUD comes back, and the
-  numbers come back with it, updated within a quarter of a second.
-- [Alaydriem's Free Camera](https://github.com/alaydriem/levi-freecam) hides the HUD when it turns on.
-  Press F1 in the free camera to show the HUD and the numbers.
+## Installation
 
-## Remote servers
+Requires the client build of [LeviLamina](https://github.com/LiteLDev/LeviLamina) and [Alaydriem's Mod Manager](https://github.com/alaydriem/levi-modmanager).
 
-The mod reads only the light data that your client already has, and it sends no packets. It works the
-same on remote servers and in local worlds. Some servers do not allow client mods. Obey the rules of the
-server you play on.
+```powershell
+lip install github.com/alaydriem/levi-levels#client
+```
+
+Or download the zip from the [latest release](https://github.com/alaydriem/levi-lightlevel/releases/latest) and extract it into `mods/`.
+
+| Light Levels | Minecraft Bedrock | LeviLamina | Mod Manager |
+| --- | --- | --- | --- |
+| 0.1.0 | 1.26.51 | 26.51.6+ | 0.1.x |
 
 ## Configuration
 
-The mod reads `config.json` from its LeviLamina config folder when the game starts. A missing or broken
-file gives the defaults and a warning in the log. A value out of range is clamped into its range, or, for
-`passSeconds`, `lift` and `scale`, replaced by its default.
+Settings are in the mod manager panel and saved to `config.hcl` in the mod's config folder. Scan and memory settings apply after a restart.
 
-| Key | Default | Meaning |
+| Setting | Default | Description |
 | --- | --- | --- |
-| `keys.toggle` | `76` (`L`) | Windows virtual-key code of the toggle key |
-| `keys.ctrl` | `true` | Ctrl must be held with the toggle key |
-| `scan.radius` | `24` | Radius in blocks, 1 to 32 |
-| `scan.passSeconds` | `0.25` | Time for one full scan of the radius |
-| `scan.maxLabels` | `8192` | Most numbers drawn; the nearest are kept |
-| `scan.maxColumnsPerFrame` | `512` | Most block columns read in one frame |
-| `light.redMax` | `0` | Light at or below this is red |
-| `light.yellowMax` | `7` | Light at or below this (and above red) is yellow |
-| `label.red`, `label.yellow`, `label.green` | see below | RGBA colors, each 0 to 1 |
-| `label.lift` | `0.02` | Height of the number above the top face, 0 to 0.05 |
-| `label.scale` | `1.0` | Size of the number |
-| `telemetry` | `false` | Writes frame rate, cost and memory to the log every 2 seconds |
-| `memoryBudgetMb` | `32` | Memory the overlay may use; telemetry warns above it |
+| `keys.toggle` | `"Ctrl+L"` | Toggle key |
+| `scan.radius` | `24` | Radius in blocks (1–32) |
+| `scan.pass_seconds` | `0.25` | Time for one full scan |
+| `scan.max_labels` | `8192` | Max numbers drawn (nearest first) |
+| `scan.max_columns_per_frame` | `512` | Max block columns read per frame |
+| `light.red_max` | `0` | Highest light shown red |
+| `light.yellow_max` | `7` | Highest light shown yellow |
+| `label.red` / `label.yellow` / `label.green` | | RGBA colours, 0–1 |
+| `label.lift` | `0.02` | Height above the block (0–0.05) |
+| `label.scale` | `1.0` | Number size |
+| `telemetry` | `false` | Log frame rate, cost and memory |
+| `memory_budget_mb` | `32` | Memory budget |
 
-Default colors: red `[1.0, 0.25, 0.25, 1.0]`, yellow `[1.0, 0.85, 0.2, 1.0]`, green
-`[0.35, 1.0, 0.35, 1.0]`.
+## Building
 
-```json
-{
-  "keys": { "toggle": 76, "ctrl": true },
-  "scan": { "radius": 16 },
-  "light": { "redMax": 0, "yellowMax": 7 },
-  "telemetry": true
-}
-```
+Requires Windows x64, [mise](https://mise.jdx.dev), rustup, [cargo-nextest](https://nexte.st) and LLVM (`clang-cl`).
 
-## Build
-
-Every build and test is a [mise](https://mise.jdx.dev) task. `mise tasks` lists them.
-
-```bash
+```powershell
 mise trust
 mise run preflight
-mise run build-mod     # builds the Rust library, the header and the mod into shim/bin/alaydriem-levels
-mise run install-mod   # copies it to LM_MODS_DIR, set in mise.local.toml
+mise run build-mod
+mise run test
 ```
 
-## Licence
+## License
 
-See [LICENSE](LICENSE).
+BSD 3-Clause. See [LICENSE](./LICENSE).

@@ -2,9 +2,11 @@
 
 #include "ll/api/mod/NativeMod.h"
 
+#include <filesystem>
+
 namespace levi_levels {
 
-// the LeviLamina entry point: starts Rust, installs the hooks and the key listener
+// the LeviLamina entry point: registers with the mod manager through Rust and installs the hooks
 class LevelsMod {
 public:
     static LevelsMod& getInstance();
@@ -20,9 +22,8 @@ public:
     bool disable();
 
 private:
-    bool startCore();
-
-    ll::mod::NativeMod& mSelf;
+    ll::mod::NativeMod&   mSelf;
+    std::filesystem::path mConfigDir;
 };
 
 } // namespace levi_levels

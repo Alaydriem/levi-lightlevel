@@ -3,9 +3,10 @@ use levels_core::services::{LabelRotation, LevelsController};
 use levels_core::structs::draw::CameraView;
 use levels_core::structs::frame::FrameStatus;
 use levels_core::structs::light::SurfaceSample;
+use levels_core::structs::manager::ManagerSignal;
 use levels_core::structs::world::{BlockPos, ColumnPos};
 
-use crate::support::frames::{TOGGLE, feet, in_world, out_of_world};
+use crate::support::frames::{feet, in_world, out_of_world};
 
 const BYTES_PER_MB: u64 = 1024 * 1024;
 
@@ -13,10 +14,11 @@ fn controller() -> LevelsController {
     LevelsController::new(LevelsConfig::default())
 }
 
+// true when the press flipped the overlay
 fn press(controller: &mut LevelsController) -> bool {
-    let consumed = controller.key(TOGGLE, true, true);
-    controller.key(TOGGLE, false, true);
-    consumed
+    let was_on = controller.is_on();
+    controller.signal(ManagerSignal::TogglePressed);
+    controller.is_on() != was_on
 }
 
 fn turned_on_with(config: LevelsConfig) -> LevelsController {
@@ -50,40 +52,18 @@ fn toggle_turns_on_and_off() {
     let mut controller = controller();
     controller.frame(in_world(0));
 
-    assert!(controller.key(TOGGLE, true, true));
+    assert!(press(&mut controller));
     assert!(controller.is_on());
-    controller.key(TOGGLE, false, true);
-    assert!(controller.key(TOGGLE, true, true));
+    assert!(press(&mut controller));
     assert!(!controller.is_on());
 }
 
 #[test]
-fn l_without_ctrl_does_not_toggle() {
-    let mut controller = controller();
-    controller.frame(in_world(0));
-
-    assert!(!controller.key(TOGGLE, true, false));
-    assert!(!controller.is_on());
-}
-
-#[test]
-fn held_key_repeat_toggles_once_and_stays_consumed() {
-    let mut controller = controller();
-    controller.frame(in_world(0));
-
-    let presses =
-        [controller.key(TOGGLE, true, true), controller.key(TOGGLE, true, true), controller.key(TOGGLE, false, true)];
-
-    assert_eq!(presses, [true, true, true]);
-    assert!(controller.is_on());
-}
-
-#[test]
-fn menu_open_ignores_toggle() {
+fn toggle_signal_with_menu_open_stays_off() {
     let mut controller = controller();
     controller.frame(FrameStatus { menu_open: true, ..in_world(0) });
 
-    assert!(!controller.key(TOGGLE, true, true));
+    assert!(!press(&mut controller));
     assert!(!controller.is_on());
 }
 
@@ -100,33 +80,78 @@ fn press_in_a_menu_does_not_block_the_next_press() {
 }
 
 #[test]
-fn lost_key_up_is_cleared_by_a_menu() {
+fn toggle_signal_without_world_stays_off() {
     let mut controller = controller();
-    controller.frame(in_world(0));
-    assert!(controller.key(TOGGLE, true, true));
 
-    controller.frame(FrameStatus { menu_open: true, ..in_world(1) });
-    controller.frame(in_world(2));
-
-    assert!(controller.key(TOGGLE, true, true));
+    assert!(!press(&mut controller));
     assert!(!controller.is_on());
 }
 
 #[test]
-fn no_world_ignores_toggle() {
-    let mut controller = controller();
+fn lease_lost_turns_off_and_clears() {
+    let mut controller = turned_on();
+    submit_under_feet(&mut controller);
 
-    assert!(!controller.key(TOGGLE, true, true));
+    controller.signal(ManagerSignal::LeaseLost);
+
+    assert!(!controller.is_on());
+    assert!(controller.frame(in_world(1)).is_empty());
+    assert!(controller.draw_list(0, None).is_empty());
+    assert!(press(&mut controller));
+    assert!(controller.is_on());
+}
+
+#[test]
+fn disabled_turns_off() {
+    let mut controller = turned_on();
+
+    controller.signal(ManagerSignal::Disabled);
+
     assert!(!controller.is_on());
 }
 
 #[test]
-fn other_keys_pass_through() {
-    let mut controller = controller();
-    controller.frame(in_world(0));
+fn apply_config_changes_label_colors_live() {
+    let mut controller = turned_on();
+    submit_under_feet(&mut controller);
+    let blue = [0.0, 0.0, 1.0, 1.0];
+    let mut config = LevelsConfig::default();
+    config.label.yellow = blue;
 
-    assert!(!controller.key(0x41, true, true));
-    assert!(!controller.is_on());
+    controller.apply_config(config);
+
+    let labels = controller.draw_list(0, None);
+    assert_eq!(labels.len(), 1);
+    assert_eq!(labels[0].color, blue);
+}
+
+#[test]
+fn apply_config_sanitizes_light_bands() {
+    let mut controller = turned_on();
+    submit_under_feet(&mut controller);
+    let mut config = LevelsConfig::default();
+    config.light.red_max = 9;
+    config.light.yellow_max = 3;
+
+    controller.apply_config(config);
+
+    let labels = controller.draw_list(0, None);
+    assert_eq!(labels.len(), 1);
+    assert_eq!(labels[0].color, LevelsConfig::default().label.red);
+}
+
+#[test]
+fn apply_config_keeps_scan_until_restart() {
+    let mut controller = turned_on();
+    let before = controller.max_columns_per_frame();
+    let mut config = LevelsConfig::default();
+    config.scan.radius = 2;
+    config.scan.max_columns_per_frame = 1;
+
+    controller.apply_config(config);
+
+    assert_eq!(controller.max_columns_per_frame(), before);
+    assert!(controller.frame(in_world(30)).len() > 1);
 }
 
 #[test]

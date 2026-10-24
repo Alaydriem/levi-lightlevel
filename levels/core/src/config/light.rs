@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 const MAX_LIGHT: u8 = 15;
 
 // a light value at or below red_max is red, at or below yellow_max is yellow, above it is green
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(default)]
 pub struct LightConfig {
     pub red_max: u8,
     pub yellow_max: u8,

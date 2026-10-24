@@ -35,6 +35,12 @@ impl DrawListBuilder {
         }
     }
 
+    // replaces the label look and the light bands; the buffers stay as sized by new
+    pub fn restyle(&mut self, label: LabelConfig, classifier: LightClassifier) {
+        self.label = label;
+        self.classifier = classifier;
+    }
+
     pub fn max_labels(&self) -> usize {
         self.max_labels
     }

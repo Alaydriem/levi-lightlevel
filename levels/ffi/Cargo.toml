@@ -11,10 +11,16 @@ crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 levels-core.workspace = true
-log.workspace = true
+amm-abi.workspace = true
+amm-client.workspace = true
+amm-core.workspace = true
+curia.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
-tempfile.workspace = true
+amm-client = { workspace = true, features = ["test-support"] }
+hcl-rs.workspace = true
 
 [[test]]
 name = "integration"

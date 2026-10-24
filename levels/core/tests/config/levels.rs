@@ -1,46 +1,4 @@
-use std::path::Path;
-
-use levels_core::config::{ConfigLoader, LevelsConfig, MAX_COLUMN_SURFACES, MAX_RADIUS};
-use tempfile::TempDir;
-
-fn write_config(text: &str) -> (TempDir, std::path::PathBuf) {
-    let dir = TempDir::new().unwrap();
-    let path = dir.path().join("config.json");
-    std::fs::write(&path, text).unwrap();
-    (dir, path)
-}
-
-#[test]
-fn missing_file_gives_defaults() {
-    let config = ConfigLoader::load(Path::new("definitely/not/here/config.json"));
-
-    assert_eq!(config.keys.toggle, 0x4C);
-    assert!(config.keys.ctrl);
-    assert_eq!(config.memory_budget_mb, 32);
-    assert_eq!(config.scan.radius, 24);
-    assert_eq!(config.scan.pass_seconds, 0.25);
-    assert_eq!(config.scan.max_labels, 8192);
-    assert_eq!(config.light.red_max, 0);
-    assert_eq!(config.light.yellow_max, 7);
-    assert!(!config.telemetry);
-}
-
-#[test]
-fn broken_json_gives_defaults() {
-    let (_dir, path) = write_config("{not json");
-
-    assert_eq!(ConfigLoader::load(&path), LevelsConfig::default());
-}
-
-#[test]
-fn partial_json_keeps_other_defaults() {
-    let (_dir, path) = write_config(r#"{"scan":{"radius":16}}"#);
-
-    let config = ConfigLoader::load(&path);
-
-    assert_eq!(config.scan.radius, 16);
-    assert_eq!(config.scan.max_labels, 8192);
-}
+use levels_core::config::{LevelsConfig, MAX_COLUMN_SURFACES, MAX_RADIUS};
 
 #[test]
 fn huge_scan_limits_are_capped() {

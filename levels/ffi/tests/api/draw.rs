@@ -56,10 +56,12 @@ fn submit_then_draw_returns_label() {
 
 #[test]
 fn draw_view_carries_rotation_and_scale() {
-    let dir = tempfile::tempdir().unwrap();
-    let file = dir.path().join("config.json");
-    std::fs::write(&file, r#"{"label":{"scale":0.5}}"#).unwrap();
-    let session = LvSession::with_config(&file);
+    let session = LvSession::with_config(
+        "label {
+  scale = 0.5
+}
+",
+    );
     session.turn_on();
     session.frame(&levels_ffi::types::LvFrameStatus { yaw: 90.0, ..LvSession::in_world(1.0 / 60.0) });
 
