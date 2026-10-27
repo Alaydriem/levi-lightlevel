@@ -6,6 +6,8 @@ members = ["levels/core", "levels/ffi"]
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.98"
+authors = ["Charles R. Portwood II"]
+license = "BSD-3-Clause"
 publish = false
 
 [workspace.dependencies]
@@ -16,9 +18,9 @@ curia = "=0.2.2"
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
 hcl-rs = "=0.19.8"
 levels-core = { path = "levels/core" }
-amm-abi = { path = "../levi-modmanager/crates/amm-abi" }
-amm-client = { path = "../levi-modmanager/crates/amm-client", default-features = false }
-amm-core = { path = "../levi-modmanager/crates/amm-core" }
+amm-abi = { git = "https://github.com/Alaydriem/levi-modmanager", tag = "v1.0.0" }
+amm-client = { git = "https://github.com/Alaydriem/levi-modmanager", tag = "v1.0.0", default-features = false }
+amm-core = { git = "https://github.com/Alaydriem/levi-modmanager", tag = "v1.0.0" }
 
 [workspace.lints.clippy]
 unwrap_used = "deny"

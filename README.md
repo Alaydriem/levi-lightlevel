@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./assets/readme.png" alt="Light Levels" width="256">
+
 # Alaydriem's Light Levels
 
 [![Release](https://img.shields.io/github/v/release/alaydriem/levi-lightlevel?include_prereleases)](https://github.com/alaydriem/levi-lightlevel/releases)
@@ -76,4 +78,4 @@ mise run test
 
 ## License
 
-BSD 3-Clause. See [LICENSE](./LICENSE).
+BSD 3-Clause. Copyright (c) 2026 Charles R. Portwood II. See [LICENSE](./LICENSE).
